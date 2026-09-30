@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bark-50 text-bark-900 antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand-700;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-2xl border border-bark-200 bg-white p-4 shadow-card;
+  }
+}
+
+/*
+ * Leaflet ships its own z-index scale. The map always lives inside a wrapper
+ * with `isolate z-0`, so panes stay under the app chrome (header, bottom nav,
+ * dev tools).
+ */
+.leaflet-container {
+  z-index: 0;
+  background-color: #e6ecf0;
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+}
+
+.leaflet-popup-content {
+  margin: 12px 14px;
+  font-family: inherit;
+  line-height: 1.35;
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: #64748b;
+}
+
+/* Marker icon holder — the pin itself is drawn with inline styles. */
+.rva-pin {
+  background: transparent;
+  border: 0;
+}

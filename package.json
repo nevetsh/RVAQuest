@@ -1,0 +1,33 @@
+{
+  "name": "rva-quest",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b --noEmit false --emitDeclarationOnly false || tsc -p tsconfig.app.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "leaflet": "^1.9.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-leaflet": "^5.0.0",
+    "react-router-dom": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.6.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.0.0"
+  }
+}
