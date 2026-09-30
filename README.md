@@ -39,18 +39,24 @@ npm test          # vitest run — the full suite, once
 npm run test:watch  # re-runs on change while developing
 ```
 
-The suite covers the pure rule modules and the place services. Current status:
+The suite covers the pure rule modules, the place services, and the two heaviest
+screens. Current status:
 
 | Test file | Area | Tests |
 | --- | --- | --- |
 | `src/rules/geo.test.ts` | distance / radius helpers | 12 |
 | `src/rules/permissions.test.ts` | role permissions | 15 |
 | `src/rules/quests.test.ts` | quest visibility & check-in rules | 22 |
-| `src/rules/places.test.ts` | **UC03 rules: validation, 50 m duplicates, 12/day limit, points-once** | 19 |
+| `src/rules/places.test.ts` | **UC03 rules: validation, 50 m duplicates, 12/day limit, points-once, edit/withdraw, live duplicate hint** | 38 |
 | `src/rules/achievements.test.ts` | badge awarding (FR03/FR04) | 5 |
 | `src/rules/forum.moderation.test.ts` | banned words, likes, reports, moderation | 41 |
-| `src/services/places.service.test.ts` | **submission pipeline end-to-end (FR05/FR09/FR10)** | 9 |
-| **Total** | | **123** |
+| `src/services/places.service.test.ts` | **submission pipeline end-to-end (FR05/FR09/FR10)** | 21 |
+| `src/pages/AddPlacePage.dom.test.tsx` | the submission form in jsdom: error paths, 12/day, duplicates | 10 |
+| `src/pages/ModeratorQueuePage.dom.test.tsx` | approve / reject / owner-withdrawals mid-review | 8 |
+| **Total** | | **172** |
+
+Rules and services run in plain Node; component tests opt into jsdom with a
+`// @vitest-environment jsdom` header so they stay off the fast path.
 
 ## Other commands
 
@@ -156,26 +162,35 @@ The confirmation screen shows the place is **Pending review**, hidden from the m
 until approved, will pay **25 pts once**, and links to its forum post. Open the post:
 it already shows the **Pending review** badge.
 
-**2:45 — 3:30 · Moderator queue (FR09, BR05)**
+**2:45 — 3:15 · Change your mind before review (owner controls)**
+Back on `/profile`, the pending row has **Edit** and **Withdraw**. Open **Edit** — the
+same form, pre-filled, with no new submission used. Change the name and **Save
+changes**: the confirmation says the suggestion was updated, and the forum post's
+title and text follow it. **Withdraw** asks once inline; confirming takes the
+suggestion out of the moderator queue (its post stays up, marked **Withdrawn**).
+Both actions stop the moment a moderator decides.
+
+**3:15 — 3:45 · Moderator queue (FR09, BR05)**
 Dev tools › switch to **Dana Whitfield (Moderator)**. The **Manage → Moderation queue**
-screen (or `/moderator`) lists the pending suggestion. Approve it — the banner
+screen (or `/moderator`) lists the pending suggestion, flagged **Edited *n* time(s)
+since it was filed** when the submitter changed it. Approve it — the banner
 confirms points were paid, and the place now shows on `/map` as an amber diamond.
 Dev tools › switch to the submitter: their profile **My submissions** shows
 **Approved · +25 pts** and their total went up once. Approve again (from Recently
 reviewed) to prove points are awarded **once**.
 
-**3:30 — 4:15 · Rejection path (BR05)**
+**3:45 — 4:20 · Rejection path (BR05)**
 As the submitter, suggest another place, then switch back to Dana and **Reject** it
 with a reason. The submitter's points are unchanged; their **My submissions** shows
 **Rejected** and the reason; the forum post shows **Rejected** and
 **Moderator note: …**.
 
-**4:15 — 5:00 · Profile, accessibility, responsiveness (FR03, FR06, FR07, NFR02)**
+**4:20 — 5:00 · Profile, accessibility, responsiveness (FR03, FR06, FR07, NFR02)**
 Open `/profile`: points total, day streak, badges (earned vs in progress, each earned
-badge has **Share to forum**), saved quests (FR06), and **My submissions** with every
-status. Press **Tab** from the top of the page to show the **Skip to main content**
-link, and **Escape** to close the pin picker / Dev tools dialog. Resize to **375 px**
-and **1280 px** to show both layouts, then wrap up with `npm test` (123 passing).
+badge has **Share to forum**), saved quests (FR06), and **My submissions**with every status (including any you withdrew). Press **Tab** from the top of the page
+to show the **Skip to main content** link, and **Escape** to close the pin picker / Dev
+tools dialog. Resize to **375 px** and **1280 px** to show both layouts, then wrap up
+with `npm test` (172 passing).
 
 ---
 

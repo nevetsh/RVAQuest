@@ -4,6 +4,7 @@ import { useAppState, useCurrentUser } from '../hooks/useAppState'
 import { usePlaces } from '../hooks/usePlaces'
 import { usePageTitle } from '../hooks/usePageTitle'
 import { reviewPlace } from '../services/places.service'
+import { canReviewPlaces } from '../rules/permissions'
 import { PlaceStatusBadge } from '../components/places/PlaceStatusBadge'
 import { LazyQuestMap } from '../components/map/LazyQuestMap'
 import { Badge } from '../components/ui/Badge'
@@ -30,11 +31,13 @@ export function ModeratorQueuePage() {
 
   usePageTitle('Moderation queue')
 
-  if (user.role !== 'moderator') {
+  // Phase 6: the same capability ladder as the Admin console decides this, so
+  // managers and administrators can work the queue too (the console links here).
+  if (!canReviewPlaces(user)) {
     return (
       <EmptyState
-        title="Moderators only"
-        message="Switch to the moderator account (Dana Whitfield) in the Dev tools drawer to review suggested places."
+        title="Reviewers only"
+        message="Approving suggested places is for moderators, managers and administrators. Switch to Dana Whitfield (Moderator) in the Dev tools drawer to work the queue."
         action={
           <Link
             to="/profile"

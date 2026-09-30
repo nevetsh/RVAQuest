@@ -10,12 +10,14 @@ import { submitPlace, submissionsLeftToday, updatePlace } from '../services/plac
 import {
   PLACE_FIELD_LIMITS,
   canEditPlace,
+  findPossibleDuplicate,
   hasErrors,
   validatePlaceDraft,
   type PlaceDraft,
   type PlaceFieldErrors,
 } from '../rules/places'
 import { RULES } from '../lib/constants'
+import { DuplicateHint } from '../components/places/DuplicateHint'
 import { LocationPicker } from '../components/places/LocationPicker'
 import { PlaceStatusBadge } from '../components/places/PlaceStatusBadge'
 import { Button, buttonClasses } from '../components/ui/Button'
@@ -55,7 +57,7 @@ function draftFromPlace(place: Place | undefined): PlaceDraft {
 
 export function AddPlacePage() {
   const user = useCurrentUser()
-  const { settings } = useAppState()
+  const { places, settings } = useAppState()
   const navigate = useNavigate()
   const [params] = useSearchParams()
   const from = params.get('from')
@@ -293,6 +295,11 @@ export function AddPlacePage() {
   const categoryError = fieldErrors.category
   const locationError = fieldErrors.location
 
+  // BR03 while the form is still open: warn about an existing place with the
+  // same name nearby as soon as the name and the pin are both known.
+  const duplicateDraft = { name: draft.name, location: draft.location }
+  const duplicate = findPossibleDuplicate(duplicateDraft, places, { ignoreId: editing?.id })
+
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <Link to={backTo} className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-800 hover:underline">
@@ -496,6 +503,8 @@ export function AddPlacePage() {
               {locationError}
             </p>
           ) : null}
+
+          <DuplicateHint duplicate={duplicate} className="mt-2" />
         </fieldset>
 
         <div>
@@ -553,6 +562,11 @@ export function AddPlacePage() {
       <LocationPicker
         open={showPicker}
         initial={draft.location}
+        duplicateHint={(coords: Coordinates) =>
+          findPossibleDuplicate({ name: draft.name, location: coords }, places, {
+            ignoreId: editing?.id,
+          })
+        }
         onConfirm={(coords: Coordinates) => {
           updateDraft('location', coords)
           setShowPicker(false)

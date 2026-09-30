@@ -64,6 +64,16 @@ numbers and wording are taken from that document.
 | **Code** | `PLACE_APPROVAL_POINTS` in `src/lib/constants.ts`; `src/rules/places.ts` — `approvePlace` returns `awardPoints`; `src/services/places.service.ts` — `reviewPlace` credits `user.points` only on the pending→approved transition; `src/components/profile/MySubmissions.tsx` |
 | **Evidence** | `src/rules/places.test.ts` ("points are awarded once"), `src/services/places.service.test.ts` (re-approve is a no-op); manual check (Jordan 240 → 265, second approve → no change) |
 
+**Owner controls on a pending suggestion (edit / withdraw).** Until a moderator decides,
+the explorer who filed a suggestion can change it or take it back, without the change
+counting as a further submission:
+
+| | |
+| --- | --- |
+| **Screens** | `/profile` → **My submissions** (Edit / Withdraw on pending rows), `/places/new?edit=<id>` (same form, pre-filled), `/moderator` (shows the revision) |
+| **Code** | `src/rules/places.ts` — `canEditPlace`, `canWithdrawPlace`, `editPlace` (bumps `editCount`/`editedAt`), `withdrawPlace`, `findDuplicatePlaceForEdit`; `src/services/places.service.ts` — `updatePlace`, `withdrawSubmittedPlace` (both re-sync the linked forum post); `Place.editCount`/`editedAt`/`withdrawnAt` in `src/services/places.types.ts`; `src/pages/AddPlacePage.tsx` (`?edit=` mode), `src/components/profile/MySubmissions.tsx`, `src/pages/ForumPostPage.tsx` |
+| **Evidence** | `src/rules/places.test.ts` + `src/services/places.service.test.ts` (ownership, edit count, self-duplicate exclusion, no new ledger row, withdraw leaves the queue, points unmoved, `reviewPlace` then refuses with `withdrawn`); manual check at 1280 px and 375 px |
+
 ### FR06 — Users can save favourite quests
 > Save/unsave a quest and see the saved list on the profile.
 
@@ -179,11 +189,14 @@ behaviour asserted in `src/services/places.service.test.ts`:
 
 | Mandated area | Tests |
 | --- | --- |
-| **Duplicate detection** (BR03 — same name within 50 m of an approved *or pending* place) | case/whitespace-insensitive matching; 50 m boundary in/out; rejected places never block; approved and pending both block |
-| **Daily limit** (BR02 / NFR04 — 12 per day) | 12 accepted, 13th refused; counter and "remaining" maths; resets when the day key changes; per-user isolation |
-| **Points-once** (BR05) | first approval awards, second approval does not; rejection awards none; submitter points change by exactly the place's points |
+| **Duplicate detection** (BR03 — same name within 50 m of an approved *or pending* place) | case/whitespace-insensitive matching; 50 m boundary in/out; rejected and withdrawn places never block; approved and pending both block; an edit cannot collide with the place being edited |
+| **Daily limit** (BR02 / NFR04 — 12 per day) | 12 accepted, 13th refused; counter and "remaining" maths; resets when the day key changes; per-user isolation; an edit or a withdrawal neither spends nor refunds an allowance |
+| **Points-once** (BR05) | first approval awards, second approval does not; rejection awards none; withdrawal awards none and blocks a later approval; submitter points change by exactly the place's points |
 
-Full suite: **123 tests / 7 files, all passing** (`npm test`).
+Full suite: **172 tests / 9 files, all passing** (`npm test`). The two jsdom
+component suites (`AddPlacePage.dom.test.tsx`, `ModeratorQueuePage.dom.test.tsx`)
+drive the submission form and the moderator queue through real user events,
+including the owner-withdraws-while-a-moderator-watches case.
 
 ---
 
@@ -231,7 +244,18 @@ is reversible and isolated to the file named.
     seed users stand in for sign-in, and everything persists in `localStorage`
     (`STORAGE_SCHEMA_VERSION` re-seeds on mismatch). The Dev tools drawer is
     explicitly prototype-only UI.
-12. **Concurrent feature lines were merged, not replaced.** The forum moderation
+12. **A pending suggestion is the owner's to change or take back.** UC03 describes
+    submission and moderator review but not what happens in between, so the
+    prototype lets the owner edit (same form, same validation, same 50 m duplicate
+    rule minus itself) or withdraw a suggestion while it is still `pending`. Neither
+    action writes a new submission row, so BR02's 12/day ledger is unaffected —
+    withdrawing does not refund an allowance, or a user could cycle suggestions for
+    free. Edits bump `editCount`/`editedAt` and the moderator queue and forum post
+    say so, so a reviewer never approves details they never saw. Withdrawal adds a
+    fourth place status, `withdrawn`, kept out of the shared quest `ReviewStatus`
+    (see `PlaceReviewStatus` in `src/services/places.types.ts`); a withdrawn place
+    no longer blocks the same name/location, and `reviewPlace` refuses it.
+13. **Concurrent feature lines were merged, not replaced.** The forum moderation
     stack (FR01), the admin console and the achievements work were developed in
     parallel with the place pipeline; shared files (`types.ts`, `storage.ts`,
     `seed.ts`, `constants.ts`, `App.tsx`, `ProfilePage.tsx`, `SuggestionBox.tsx`)
@@ -242,9 +266,10 @@ is reversible and isolated to the file named.
 
 ## Known gaps / out of scope
 
-- No automated UI (component/e2e) tests — the suite covers pure rules and services.
-  Screens were verified manually (see the demo script in `README.md`), including at
-  375 px and 1280 px.
+- Automated coverage is rules + services plus the two jsdom component suites for the
+  submission form and the moderation queue; the remaining screens were verified
+  manually (see the demo script in `README.md`), including at 375 px and 1280 px.
+  There is no browser-level end-to-end suite.
 - NFR03 (6-month refresh) is a team process and is not testable in code; the versioned
   schema is the only code-level support.
 - NFR06's 2-second budget is verified locally against the production build, not on a

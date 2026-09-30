@@ -358,8 +358,39 @@ describe('live duplicate hint while the form is still being filled in (BR03)', (
     expect(hint?.place.id).toBe('place-near')
   })
 
+  it('never warns a suggestion about itself while it is being edited', () => {
+    const editing = makePlace({ location: WARNING_ONLY })
+    const draft = { name: 'Riverside Steps', location: WARNING_ONLY }
+
+    // Without the exclusion the edit would collide with its own record at 0 m.
+    expect(findPossibleDuplicate(draft, [editing])?.blocking).toBe(true)
+    expect(findPossibleDuplicate(draft, [editing], { ignoreId: 'place-1' })).toBeNull()
+  })
+
+  it('still warns an edit about a different nearby place with the same name', () => {
+    // place-1 is the suggestion being edited (same spot as the pin); place-2 is
+    // a different spot with the same name ~120 m away, so the hint must still fire.
+    const hint = findPossibleDuplicate(
+      { name: 'Riverside Steps', location: WARNING_ONLY },
+      [makePlace({ location: WARNING_ONLY }), makePlace({ id: 'place-2', location: LOCATION })],
+      { ignoreId: 'place-1' },
+    )
+
+    expect(hint?.place.id).toBe('place-2')
+    expect(hint?.blocking).toBe(false)
+  })
+
+  it('honours a custom warning radius', () => {
+    const draft = { name: 'Riverside Steps', location: CLEAR }
+
+    expect(findPossibleDuplicate(draft, [makePlace()])).toBeNull()
+    expect(findPossibleDuplicate(draft, [makePlace()], { warnRadiusMeters: 500 })).not.toBeNull()
+  })
+
   it('formats the distance for the hint', () => {
     expect(formatDistance(38)).toBe('38 m')
     expect(formatDistance(1200)).toBe('1.2 km')
+    // A pin dropped on top of an existing one must not read as "0 m".
+    expect(formatDistance(0)).toBe('less than 1 m')
   })
 })

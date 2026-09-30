@@ -1,11 +1,19 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAppState, useCurrentUser, useQuests } from '../hooks/useAppState'
 import { useLocation as useLocationContext } from '../app/LocationProvider'
 import { resetAllData, setLocationDenied, setSimulatedLocation, switchUser } from '../services'
 import type { Coordinates } from '../services/types'
 import { RICHMOND_CENTER, RULES } from '../lib/constants'
+import { canReviewPlaces } from '../rules/permissions'
 import { currentDayKey } from '../rules/time'
 import { fillDailyQuota, jumpToToday, jumpToTomorrow, resetDailyLimits } from './devActions'
+import {
+  DEMO_SUBMITTER_ID,
+  DEMO_SUGGESTION_NAME,
+  startDemoScenario,
+  type DemoScenario,
+} from './demoScenario'
 import { RoleBadge, StatusBadge } from '../components/admin/RoleBadge'
 import { cn } from '../lib/cn'
 
@@ -25,9 +33,11 @@ const LOCATION_PRESETS: Array<{ label: string; coords: Coordinates }> = [
 
 export function DevToolsDrawer() {
   const [open, setOpen] = useState(false)
+  const [demo, setDemo] = useState<DemoScenario | null>(null)
   const state = useAppState()
   const user = useCurrentUser()
   const quests = useQuests()
+  const navigate = useNavigate()
   const { coords, source, requestLocation } = useLocationContext()
 
   const pendingCount = quests.filter((quest) => quest.reviewStatus === 'pending').length
@@ -35,6 +45,45 @@ export function DevToolsDrawer() {
   const submissionsUsedToday = state.submissions.filter(
     (entry) => entry.userId === user.id && entry.dayKey === dayKey,
   ).length
+
+  const pendingPlaces = state.places.filter((place) => place.reviewStatus === 'pending').length
+  const demoApproved = state.places.some(
+    (place) => place.name === DEMO_SUGGESTION_NAME && place.reviewStatus === 'approved',
+  )
+  const demoSubmitted = state.places.some((place) => place.name === DEMO_SUGGESTION_NAME)
+  const approvalLogged = state.auditLog.some((entry) => entry.action === 'place-approved')
+
+  /** The 5-minute script, ticked off against live state so nothing is faked. */
+  const demoSteps: Array<{ label: string; done: boolean; to: string; action: string }> = [
+    {
+      label: `You are ${demo?.reviewerName ?? 'the moderator'}, and ${pendingPlaces} suggestion${
+        pendingPlaces === 1 ? ' is' : 's are'
+      } waiting for review`,
+      done: canReviewPlaces(user) && pendingPlaces > 0,
+      to: '/moderator',
+      action: 'Open the queue',
+    },
+    {
+      label: `Approve “${DEMO_SUGGESTION_NAME}” — it joins the map and ${
+        demo?.submitterName ?? 'the submitter'
+      } is credited once`,
+      done: demoApproved,
+      to: '/moderator',
+      action: 'Review it',
+    },
+    {
+      label: 'Resolve a report in the forum queue to show moderation',
+      done: state.forumReports.every((report) => report.status === 'resolved'),
+      to: '/forum',
+      action: 'Open the forum',
+    },
+    {
+      label: 'The approval is on the record in the activity log',
+      done: approvalLogged,
+      to: '/admin?tab=activity',
+      action: 'Open the log',
+    },
+  ]
 
   return (
     <>
@@ -80,6 +129,81 @@ export function DevToolsDrawer() {
             </header>
 
             <div className="space-y-5 px-4 py-4 text-sm">
+              <Section title="Demo">
+                <p className="mb-2 text-xs text-bark-500">
+                  Resets the data, files a fresh pending suggestion through the real pipeline and
+                  signs in as the moderator — so the walkthrough starts with no setup.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setDemo(startDemoScenario())}
+                  className="w-full rounded-xl bg-brand-700 px-3 py-2 text-xs font-bold text-white transition hover:bg-brand-800"
+                >
+                  {demo ? 'Restart demo scenario' : 'Start demo scenario'}
+                </button>
+
+                {demo ? (
+                  <ol className="mt-3 space-y-2">
+                    {demoSteps.map((step, index) => (
+                      <li
+                        key={step.label}
+                        className="rounded-xl border border-bark-200 px-2.5 py-2 text-xs"
+                      >
+                        <div className="flex items-start gap-2">
+                          <span
+                            aria-hidden="true"
+                            className={cn(
+                              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold',
+                              step.done
+                                ? 'bg-brand-700 text-white'
+                                : 'border border-bark-300 text-bark-500',
+                            )}
+                          >
+                            {step.done ? '\u2713' : index + 1}
+                          </span>
+                          <span
+                            className={cn(
+                              'font-semibold',
+                              step.done ? 'text-bark-500 line-through' : 'text-bark-900',
+                            )}
+                          >
+                            {step.label}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOpen(false)
+                            navigate(step.to)
+                          }}
+                          className="mt-1.5 rounded-full border border-bark-200 px-2.5 py-1 text-[11px] font-semibold text-bark-700 transition hover:border-brand-400"
+                        >
+                          {step.action}
+                        </button>
+                      </li>
+                    ))}
+                    <li className="rounded-xl border border-dashed border-bark-200 px-2.5 py-2 text-xs text-bark-500">
+                      Last step: switch back to {demo.submitterName} below and open the map to see
+                      the new pin.
+                      {demoSubmitted ? null : (
+                        <span className="mt-1 block font-semibold text-amber-800">
+                          The suggestion was not created — press “Reset all data” first.
+                        </span>
+                      )}
+                    </li>
+                  </ol>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => switchUser(DEMO_SUBMITTER_ID)}
+                  className="mt-2 rounded-full border border-bark-200 px-2.5 py-1.5 text-[11px] font-semibold text-bark-700 transition hover:border-brand-400"
+                >
+                  Sign in as the submitter
+                </button>
+              </Section>
+
               <Section title="Location">
                 <p className="mb-2 text-xs text-bark-500">
                   {coords

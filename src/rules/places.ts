@@ -136,8 +136,13 @@ export interface PossibleDuplicate {
 export function findPossibleDuplicate(
   draft: Pick<PlaceDraft, 'name' | 'location'>,
   existing: Place[],
-  warnRadiusMeters: number = DUPLICATE_WARNING_RADIUS_METERS,
+  options: {
+    warnRadiusMeters?: number
+    /** Set while editing, so a suggestion never warns about itself. */
+    ignoreId?: string
+  } = {},
 ): PossibleDuplicate | null {
+  const { warnRadiusMeters = DUPLICATE_WARNING_RADIUS_METERS, ignoreId } = options
   const name = normalizePlaceName(draft.name)
   if (!name || !isValidCoordinate(draft.location)) return null
 
@@ -145,6 +150,7 @@ export function findPossibleDuplicate(
   let closest: PossibleDuplicate | null = null
 
   for (const place of existing) {
+    if (place.id === ignoreId) continue
     if (place.reviewStatus === 'rejected') continue
     if (normalizePlaceName(place.name) !== name) continue
 
@@ -163,8 +169,13 @@ export function findPossibleDuplicate(
   return closest
 }
 
-/** Meters rendered for a human: "38 m" up close, "1.2 km" further out. */
+/**
+ * Meters rendered for a human: "38 m" up close, "1.2 km" further out. Below a
+ * meter (a pin dropped on an existing one) it says so in words, because
+ * "0 m from this pin" reads like a bug.
+ */
 export function formatDistance(meters: number): string {
+  if (meters < 1) return 'less than 1 m'
   if (meters < 1000) return `${Math.round(meters)} m`
   return `${(meters / 1000).toFixed(1)} km`
 }

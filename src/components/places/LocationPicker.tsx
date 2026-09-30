@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Coordinates } from '../../services/types'
 import { RICHMOND_CENTER } from '../../lib/constants'
+import type { PossibleDuplicate } from '../../rules/places'
+import { DuplicateHint } from './DuplicateHint'
 import { LazyPinPicker } from './LazyPinPicker'
 import { Button } from '../ui/Button'
 
@@ -17,9 +19,20 @@ interface LocationPickerProps {
   initial: Coordinates | null
   onConfirm: (coords: Coordinates) => void
   onClose: () => void
+  /**
+   * BR03 advice for wherever the pin currently is, so the submitter finds out
+   * about a likely duplicate while they drag rather than after they submit.
+   */
+  duplicateHint?: (coords: Coordinates) => PossibleDuplicate | null
 }
 
-export function LocationPicker({ open, initial, onConfirm, onClose }: LocationPickerProps) {
+export function LocationPicker({
+  open,
+  initial,
+  onConfirm,
+  onClose,
+  duplicateHint,
+}: LocationPickerProps) {
   const [pin, setPin] = useState<Coordinates>(initial ?? RICHMOND_CENTER)
   // Bumped when the coordinates are typed so the map follows the pin.
   const [typedSignal, setTypedSignal] = useState(0)
@@ -115,6 +128,8 @@ export function LocationPicker({ open, initial, onConfirm, onClose }: LocationPi
             recenterSignal={typedSignal}
             className="h-64 sm:h-72"
           />
+
+          <DuplicateHint duplicate={duplicateHint?.(pin) ?? null} className="mt-3" />
 
           <div className="mt-3 grid grid-cols-2 gap-3">
             <label className="text-xs font-semibold text-bark-700">

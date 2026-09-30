@@ -155,6 +155,24 @@ describe('reviewPlace (UC03 BR04/BR05 — points once)', () => {
     ).toBe('rejected')
   })
 
+  it('refuses to review a suggestion the owner already withdrew', () => {
+    const submitted = submitPlace('casey', draft({ name: 'Withdrawn Spot' }))
+    expect(submitted.ok).toBe(true)
+    if (!submitted.ok) return
+
+    const before = getState().users.find((user) => user.id === 'casey')!.points
+    expect(withdrawSubmittedPlace('casey', submitted.place.id).ok).toBe(true)
+
+    const late = reviewPlace(submitted.place.id, 'dana', 'approve')
+    expect(late.ok).toBe(false)
+    if (late.ok) return
+    expect(late.error).toBe('withdrawn')
+
+    const place = getState().places.find((entry) => entry.id === submitted.place.id)!
+    expect(place.reviewStatus).toBe('withdrawn')
+    expect(getState().users.find((user) => user.id === 'casey')!.points).toBe(before)
+  })
+
   it('tracks a user submission history from newest to oldest', () => {
     submitPlace('jordan', draft({ name: 'One' }))
     submitPlace('jordan', draft({ name: 'Two', location: { lat: 37.531, lng: -77.44 } }))
