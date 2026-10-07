@@ -45,28 +45,36 @@ cache starts fresh from the demo data.
 ## Signing in
 
 There is no signup: every screen is behind the sign-in gate. The gate lists the demo
-accounts (names, usernames and roles) and fills the form in when you click one — the
-passwords themselves are only here in the README, never on the sign-in screen.
+accounts (names, usernames and roles) and fills the form in when you click one, so no
+password ever appears on the sign-in screen — and none is written down here either.
 
-| Who | Username | Password | They can |
-| --- | --- | --- | --- |
-| Steven Huynh | `nevetsh` | `Hollyduck123!` | everything — admin console included |
-| Eilish Dangal | `dangle` | `123` | everything — admin console included |
-| Alex Chen | `alex` | `rvaquest` | everything — admin console included |
-| Dana Whitfield | `dana` | `rvaquest` | review suggested places and moderate the forum |
-| Morgan Ellis | `morgan` | `rvaquest` | review places, quests and content |
-| Jordan Reyes | `jordan` | `rvaquest` | browse, check in, post, suggest places |
-| Casey Nguyen | `casey` | `rvaquest` | browse, check in, post, suggest places |
+| Who | Username | They can |
+| --- | --- | --- |
+| Admin (test account) | `admin` | everything — admin console included |
+| Alex Chen | `alex` | everything — admin console included |
+| Dana Whitfield | `dana` | review suggested places and moderate the forum |
+| Morgan Ellis | `morgan` | review places, quests and content |
+| Jordan Reyes | `jordan` | browse, check in, post, suggest places |
+| Casey Nguyen | `casey` | browse, check in, post, suggest places |
 
-Pick **Steven Huynh** if you just want to see everything. Sign out any time with the icon
-next to your name in the header. To look at the app as a regular explorer, use Jordan.
+Pick **Admin** (the test account) if you just want to see everything — its password is its
+own username, `admin`, and it exists only to drive the prototype. Sign out any time with
+the icon next to your name in the header. To look at the app as a regular explorer, use
+Jordan.
 
-> These passwords are demo data, kept in this file rather than on the sign-in screen. They
-> are not stored as plain text (they are salted and stretched — see
-> [docs/security-review.md](docs/security-review.md)), but this is a prototype: a real
-> deployment would check credentials on a server. Note the honest limit — the one-click
-> demo sign-in needs those passwords in the bundle, so a reader of the built JavaScript
-> can still find them (VULN-006 in that report).
+**No other password is in this README.** The demo explorers share one demo password that
+is not published here: pick an account on the gate and the form fills itself in, which is
+how the demo is meant to be run. Two stakeholder accounts used to be seeded in this
+project and have been **deleted**, passwords included, because that plaintext was exposed
+in this repository's history — see [docs/security-review.md](docs/security-review.md)
+(VULN-007), which also explains why deleting the lines does not un-publish them and the
+passwords must never be reused.
+
+> The stored credentials are demo data: they are salted and stretched in the
+> stored state (see [docs/security-review.md](docs/security-review.md)), and a real
+> deployment would check them on a server. Note the honest limit — the one-click demo
+> sign-in needs the plaintext to ship inside the bundle, so a reader of the built
+> JavaScript can still recover them (VULN-006 in that report).
 >
 > You can change your own password under **Profile → Password**. There is no
 > "forgot my password" flow — in a prototype with no email, an administrator resets the
@@ -134,8 +142,8 @@ come from the course SRS and are mapped to code in
 [docs/traceability.md](docs/traceability.md).
 
 **0:00 — 0:30 · Sign in, then explain the app and data (FR02, FR08, NFR02)**
-Open the app: the sign-in gate appears. Sign in as **Steven Huynh** (`nevetsh` /
-`Hollyduck123!`, Administrator) from the demo account list — say the line: *every screen,
+Open the app: the sign-in gate appears. Sign in as **Admin** (`admin`, the test account)
+by picking it from the demo account list — say the line: *every screen,
 Dev tools included, needs an account.* Then open `/map`. Quests appear as green pins;
 approved user places appear as amber diamonds. Click **Enable Location** — real GPS is
 used if the browser grants it ("we only use it while you browse", NFR01). Widen/narrow the
@@ -197,7 +205,7 @@ has **Share to forum**), saved quests (FR06), and **My submissions** with every 
 (including any you withdrew). Press **Tab** from the top of the page to show the **Skip to
 main content** link, and **Escape** to close the pin picker / Dev tools dialog. Resize to
 **375 px** and **1280 px** to show both layouts, then wrap up with `npm test`
-(235 passing).
+(236 passing).
 
 ---
 
@@ -219,7 +227,7 @@ react-leaflet for the map, Vitest 3 for tests. No bespoke frameworks.
 ### Tests
 
 The suite covers the pure rule modules, the place services, and the gates and screens a
-user actually touches: **235 tests in 14 files**, all passing.
+user actually touches: **236 tests in 14 files**, all passing.
 
 | Test file | Area | Tests |
 | --- | --- | --- |
@@ -234,10 +242,10 @@ user actually touches: **235 tests in 14 files**, all passing.
 | `src/services/places.service.test.ts` | submission pipeline end to end (FR05/FR09/FR10) | 21 |
 | `src/pages/AddPlacePage.dom.test.tsx` | the submission form in jsdom: error paths, 12/day, duplicates | 10 |
 | `src/pages/ModeratorQueuePage.dom.test.tsx` | approve / reject / owner withdraws mid-review | 8 |
-| `src/pages/LoginPage.dom.test.tsx` | the sign-in gate in jsdom: bad credentials, admin sign-in, demo autofill | 6 |
+| `src/pages/LoginPage.dom.test.tsx` | the sign-in gate in jsdom: bad credentials, admin sign-in, demo autofill, no password on screen | 7 |
 | `src/App.dom.test.tsx` | the gate at the routing level: deep links blocked, sign-out, no Dev tools | 3 |
 | `src/pages/ProfilePage.dom.test.tsx` | the profile password form in jsdom: wrong current, mismatch, reuse | 4 |
-| **Total** | | **235** |
+| **Total** | | **236** |
 
 Rules and services run in plain Node; component tests opt into jsdom with a
 `// @vitest-environment jsdom` header so they stay off the fast path.

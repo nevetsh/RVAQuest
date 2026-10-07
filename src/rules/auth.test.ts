@@ -32,7 +32,7 @@ function account(overrides: Partial<User> = {}): User {
 
 describe('normalizeUsername', () => {
   it('trims and lower-cases, so typing case never matters', () => {
-    expect(normalizeUsername('  NeVeTsH ')).toBe('nevetsh')
+    expect(normalizeUsername('  AdMiN ')).toBe('admin')
   })
 
   it('keeps an empty string empty', () => {
@@ -42,7 +42,7 @@ describe('normalizeUsername', () => {
 
 describe('hashPassword', () => {
   it('is deterministic', () => {
-    expect(hashPassword('Hollyduck123!')).toBe(hashPassword('Hollyduck123!'))
+    expect(hashPassword('correct horse battery')).toBe(hashPassword('correct horse battery'))
   })
 
   it('separates different passwords', () => {
@@ -50,9 +50,9 @@ describe('hashPassword', () => {
   })
 
   it('never returns the plain password', () => {
-    const hash = hashPassword('Hollyduck123!')
+    const hash = hashPassword('correct horse battery')
     expect(hash).toHaveLength(8)
-    expect(hash).not.toContain('Hollyduck')
+    expect(hash).not.toContain('battery')
   })
 })
 
@@ -100,26 +100,29 @@ describe('verifyCredentials', () => {
 })
 
 describe('the seeded accounts', () => {
-  it('signs Steven Huynh in as an administrator', () => {
+  it('signs the admin test account in as an administrator', () => {
     const users = createSeedUsers()
-    const result = verifyCredentials(users, 'nevetsh', 'Hollyduck123!')
+    const result = verifyCredentials(users, 'admin', 'admin')
 
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.user.name).toBe('Steven Huynh')
+      expect(result.user.name).toBe('Admin')
       expect(result.user.role).toBe('admin')
     }
   })
 
-  it('signs Eilish Dangal in as an administrator with the weak default password', () => {
-    const users = createSeedUsers()
-    const result = verifyCredentials(users, 'dangle', '123')
-
-    expect(result.ok).toBe(true)
-    if (result.ok) {
-      expect(result.user.name).toBe('Eilish Dangal')
-      expect(result.user.role).toBe('admin')
-    }
+  it('seeds exactly the test account and the five demo explorers', () => {
+    // The two stakeholder accounts seeded for the walkthrough were deleted when
+    // their passwords were exposed, so the roster is pinned here: anything added
+    // back has to show up in review rather than quietly sign in again.
+    expect(createSeedUsers().map((user) => user.username)).toEqual([
+      'admin',
+      'jordan',
+      'casey',
+      'dana',
+      'morgan',
+      'alex',
+    ])
   })
 
   it('gives every seeded account a unique username and a working password', () => {
@@ -141,7 +144,7 @@ describe('the seeded accounts', () => {
   })
 
   it('gives accounts that share a demo password different digests (VULN-001)', () => {
-    const shared = createSeedUsers().filter((user) => user.username !== 'nevetsh' && user.username !== 'dangle')
+    const shared = createSeedUsers().filter((user) => user.username !== 'admin')
     const digests = new Set(shared.map((user) => user.passwordHash))
 
     expect(shared.length).toBeGreaterThan(1)
@@ -151,11 +154,11 @@ describe('the seeded accounts', () => {
 
 describe('salted, stretched digests (VULN-001 in docs/security-review.md)', () => {
   it('writes salt + version + digest, and verifies only the right password', () => {
-    const stored = createPasswordHash('Hollyduck123!')
+    const stored = createPasswordHash('correct horse battery')
 
     expect(stored).toMatch(/^v2\$[0-9a-f]{32}\$[0-9a-f]{16}$/)
-    expect(verifyPasswordHash(stored, 'Hollyduck123!')).toBe(true)
-    expect(verifyPasswordHash(stored, 'hollyduck123!')).toBe(false)
+    expect(verifyPasswordHash(stored, 'correct horse battery')).toBe(true)
+    expect(verifyPasswordHash(stored, 'correct horse Battery')).toBe(false)
     expect(verifyPasswordHash(stored, '')).toBe(false)
   })
 

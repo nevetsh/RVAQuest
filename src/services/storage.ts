@@ -6,9 +6,11 @@ import type { AppState } from './types'
  * instead of crashing the app.
  */
 
-// v5 adds the second seeded administrator account (Eilish Dangal), so an older
-// payload is rejected and re-seeded instead of hiding the new account.
-export const STORAGE_SCHEMA_VERSION = 5
+// v6 replaces the two seeded stakeholder accounts with the single `admin` test
+// account. The bump matters for more than tidiness: without it a browser that
+// still holds a v5 payload keeps the removed accounts as valid sign-ins, so the
+// leaked passwords would go on working on that machine.
+export const STORAGE_SCHEMA_VERSION = 6
 const STORAGE_KEY = 'rva-quest:state'
 
 function storageAvailable(): boolean {

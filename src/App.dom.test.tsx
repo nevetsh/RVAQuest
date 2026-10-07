@@ -56,19 +56,19 @@ describe('App — the signed-out gate', () => {
 
   it('opens the deep-linked screen, Dev tools included, once the administrator signs in', async () => {
     renderAppAt('/admin')
-    await signInAs('nevetsh', 'Hollyduck123!')
+    await signInAs('admin', 'admin')
 
     expect(screen.getByRole('heading', { name: /admin & manager/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: /dev tools/i })).toBeTruthy()
-    expect(getState().signedInUserId).toBe('nevetsh')
+    expect(getState().signedInUserId).toBe('admin')
   })
 
   it('signing out puts the gate back and forgets the URL the last account opened', async () => {
     const user = userEvent.setup()
     renderAppAt('/admin')
-    await signInAs('nevetsh', 'Hollyduck123!')
+    await signInAs('admin', 'admin')
 
-    await user.click(screen.getByRole('button', { name: /sign out of steven huynh/i }))
+    await user.click(screen.getByRole('button', { name: /sign out of admin/i }))
 
     expect(screen.getByRole('heading', { level: 1, name: /sign in/i })).toBeTruthy()
     expect(getState().signedInUserId).toBeNull()
