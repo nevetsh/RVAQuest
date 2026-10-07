@@ -4,6 +4,7 @@ import { Badge } from '../components/ui/Badge'
 import { EmptyState } from '../components/ui/EmptyState'
 import { AchievementList } from '../components/profile/AchievementList'
 import { MySubmissions } from '../components/profile/MySubmissions'
+import { PasswordForm } from '../components/profile/PasswordForm'
 import { RoleBadge } from '../components/admin/RoleBadge'
 import { canAccessConsole, ROLE_LABELS } from '../rules/permissions'
 import { formatPoints, pluralize } from '../lib/format'
@@ -66,6 +67,8 @@ export function ProfilePage() {
           </p>
         ) : null}
       </section>
+
+      <PasswordForm />
 
       <section className="space-y-3">
         <header className="flex items-center justify-between">

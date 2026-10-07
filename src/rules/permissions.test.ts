@@ -27,7 +27,17 @@ import {
 /** Phase 6 acceptance tests: the role ladder and who may manage what. */
 
 function user(id: string, role: Role, status: User['status'] = 'active'): User {
-  return { id, name: id, role, points: 0, streak: 0, favoriteQuestIds: [], status }
+  return {
+    id,
+    name: id,
+    username: id,
+    passwordHash: 'demo-hash',
+    role,
+    points: 0,
+    streak: 0,
+    favoriteQuestIds: [],
+    status,
+  }
 }
 
 const ADMIN = user('alex', 'admin')

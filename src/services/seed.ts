@@ -4,11 +4,13 @@ import type {
   Coordinates,
   Quest,
   QuestCategory,
+  Role,
   User,
 } from './types'
 import { DEFAULT_SETTINGS } from './types'
 import { createSeedForumPosts, createSeedPlaces, createSeedSubmissionLog } from './seed.places'
 import { createSeedForumExtras } from './seed.forum'
+import { createPasswordHash } from '../rules/auth'
 
 /**
  * Demo content for the prototype. Coordinates are real Richmond, VA spots
@@ -255,51 +257,113 @@ export function createSeedQuests(): Quest[] {
   }))
 }
 
+/**
+ * The seeded accounts, including their prototype-only passwords.
+ *
+ * This is the single source of truth for both the store (`createSeedUsers`
+ * hashes each password) and the sign-in screen's demo list, which names each
+ * account and fills the form but never prints the password. A deployed build
+ * would never ship credentials; these only guard demo data in one browser's
+ * localStorage. See docs/traceability.md, interpretation #14.
+ */
+export interface SeedAccount {
+  id: string
+  username: string
+  /** Plain demo password. Hashed on the way into the store. */
+  password: string
+  name: string
+  role: Role
+  points: number
+  streak: number
+  favoriteQuestIds: string[]
+}
+
+export const SEED_ACCOUNTS: SeedAccount[] = [
+  {
+    // Phase 7: the administrator account the walkthrough signs in with.
+    id: 'nevetsh',
+    username: 'nevetsh',
+    password: 'Hollyduck123!',
+    name: 'Steven Huynh',
+    role: 'admin',
+    points: 0,
+    streak: 0,
+    favoriteQuestIds: [],
+  },
+  {
+    // Phase 7: a second administrator, seeded with a deliberately weak default
+    // password (`123`) so the walkthrough can show a credential that is not a
+    // demo secret. See docs/traceability.md, interpretation #14.
+    id: 'dangle',
+    username: 'dangle',
+    password: '123',
+    name: 'Eilish Dangal',
+    role: 'admin',
+    points: 0,
+    streak: 0,
+    favoriteQuestIds: [],
+  },
+  {
+    id: 'jordan',
+    username: 'jordan',
+    password: 'rvaquest',
+    name: 'Jordan Reyes',
+    role: 'user',
+    points: 240,
+    streak: 3,
+    favoriteQuestIds: ['maymont-gardens', 'libby-hill-overlook'],
+  },
+  {
+    id: 'casey',
+    username: 'casey',
+    password: 'rvaquest',
+    name: 'Casey Nguyen',
+    role: 'user',
+    points: 120,
+    streak: 1,
+    favoriteQuestIds: [],
+  },
+  {
+    id: 'dana',
+    username: 'dana',
+    password: 'rvaquest',
+    name: 'Dana Whitfield',
+    role: 'moderator',
+    points: 480,
+    streak: 7,
+    favoriteQuestIds: ['belle-isle-loop'],
+  },
+  {
+    // Phase 6: managers look after the quest catalogue and the queues.
+    id: 'morgan',
+    username: 'morgan',
+    password: 'rvaquest',
+    name: 'Morgan Ellis',
+    role: 'manager',
+    points: 320,
+    streak: 2,
+    favoriteQuestIds: ['capitol-square'],
+  },
+  {
+    // Phase 6: an administrator can manage the whole app, users included.
+    id: 'alex',
+    username: 'alex',
+    password: 'rvaquest',
+    name: 'Alex Chen',
+    role: 'admin',
+    points: 600,
+    streak: 4,
+    favoriteQuestIds: ['maymont-gardens'],
+  },
+]
+
 export function createSeedUsers(): User[] {
-  return [
-    {
-      id: 'jordan',
-      name: 'Jordan Reyes',
-      role: 'user',
-      points: 240,
-      streak: 3,
-      favoriteQuestIds: ['maymont-gardens', 'libby-hill-overlook'],
-    },
-    {
-      id: 'casey',
-      name: 'Casey Nguyen',
-      role: 'user',
-      points: 120,
-      streak: 1,
-      favoriteQuestIds: [],
-    },
-    {
-      id: 'dana',
-      name: 'Dana Whitfield',
-      role: 'moderator',
-      points: 480,
-      streak: 7,
-      favoriteQuestIds: ['belle-isle-loop'],
-    },
-    {
-      // Phase 6: managers look after the quest catalogue and the queues.
-      id: 'morgan',
-      name: 'Morgan Ellis',
-      role: 'manager',
-      points: 320,
-      streak: 2,
-      favoriteQuestIds: ['capitol-square'],
-    },
-    {
-      // Phase 6: the administrator can manage the whole app, users included.
-      id: 'alex',
-      name: 'Alex Chen',
-      role: 'admin',
-      points: 600,
-      streak: 4,
-      favoriteQuestIds: ['maymont-gardens'],
-    },
-  ]
+  // Salted and stretched (VULN-001 in docs/security-review.md), so two seed
+  // accounts that share a demo password no longer share a digest.
+  return SEED_ACCOUNTS.map(({ password, ...account }) => ({
+    ...account,
+    passwordHash: createPasswordHash(password),
+  }))
 }
 
 /** A little history so the Activity tab is not empty on a fresh demo. */
@@ -334,6 +398,8 @@ export function createSeedState(schemaVersion: number): AppState {
     schemaVersion,
     users: createSeedUsers(),
     currentUserId: 'jordan',
+    // A fresh seed is signed out: the sign-in gate is the first screen.
+    signedInUserId: null,
     quests: createSeedQuests(),
     places,
     forumPosts: [...createSeedForumPosts(), ...forum.posts],

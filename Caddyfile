@@ -1,0 +1,45 @@
+# Serving the RVA Quest production build over QUIC/UDP (HTTP/3).
+#
+# Browsers only fetch pages over TCP (HTTP/1.1, HTTP/2) or QUIC on UDP (HTTP/3),
+# so HTTP/3 is what "host it over UDP" means for a website. Everything below is
+# about the transport; the app itself is the untouched static build in dist/.
+#
+#   npm run build      # writes dist/
+#   npm run serve:h3   # caddy run --config Caddyfile
+#   open https://localhost:8443
+#
+# Caddy signs with its own local CA (tls internal), so the browser asks once to
+# trust it — HTTP/3 requires TLS, that is not optional. Verify the UDP path with
+# a curl that was built with HTTP/3:  curl --http3-only -k https://localhost:8443/
+
+{
+	# Certificates for localhost come from Caddy's internal CA.
+	local_certs
+
+	# Offer QUIC (UDP) first and fall back to TCP for older clients. h3 needs
+	# TLS, which the site block below provides.
+	servers {
+		protocols h3 h2
+	}
+}
+
+localhost:8443 {
+	root * dist
+	encode zstd gzip
+	tls internal
+
+	# VULN-003 in docs/security-review.md: the headers a static build cannot set
+	# for itself. The CSP repeats the meta tag the build injects; frame-ancestors
+	# and HSTS are only honoured as real headers.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+	}
+
+	# Single-page app: unknown paths are React Router's to resolve.
+	try_files {path} /index.html
+	file_server
+}

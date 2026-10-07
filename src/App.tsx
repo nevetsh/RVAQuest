@@ -1,5 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
+import { LoginPage } from './pages/LoginPage'
+import { useSignedInUser } from './hooks/useAppState'
 import { QuestExplorerPage } from './pages/QuestExplorerPage'
 import { QuestDetailPage } from './pages/QuestDetailPage'
 import { ForumPage } from './pages/ForumPage'
@@ -12,6 +14,14 @@ import { AdminPage } from './pages/AdminPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 export default function App() {
+  const signedIn = useSignedInUser()
+
+  // Phase 7: the sign-in gate. Nothing else mounts without a session, so the
+  // Dev tools, the routes and the shell are all unreachable while signed out.
+  // Because the router stays mounted, a deep link keeps its URL and the user
+  // lands on it after signing in.
+  if (!signedIn) return <LoginPage />
+
   return (
     <Routes>
       <Route element={<AppShell />}>

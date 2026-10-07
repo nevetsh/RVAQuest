@@ -1,10 +1,19 @@
-import { Link, Outlet } from 'react-router-dom'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
 import { useCurrentUser } from '../../hooks/useAppState'
+import { signOut } from '../../services/auth'
 import { BottomNav, TopNavLinks } from './nav'
 import { DevToolsDrawer } from '../../devtools/DevToolsDrawer'
 
 export function AppShell() {
   const user = useCurrentUser()
+  const navigate = useNavigate()
+
+  function handleSignOut(): void {
+    // Reset the URL first so the next person lands on the quest list instead of
+    // a screen their account may not be allowed to open (e.g. /admin).
+    navigate('/quests', { replace: true })
+    signOut()
+  }
 
   const initials = user.name
     .split(' ')
@@ -53,6 +62,25 @@ export function AppShell() {
               <span className="hidden text-xs font-semibold text-bark-700 sm:block">{user.name}</span>
               <span className="sr-only">Open profile</span>
             </Link>
+            <button
+              type="button"
+              onClick={handleSignOut}
+              aria-label={`Sign out of ${user.name}`}
+              title="Sign out"
+              className="rounded-full border border-bark-200 p-2 text-bark-500 transition hover:border-brand-400 hover:text-bark-700"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden="true"
+              >
+                <path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4" strokeLinecap="round" />
+                <path d="m9 8-4 4 4 4M5 12h9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
           </div>
         </div>
       </header>

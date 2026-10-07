@@ -28,9 +28,16 @@ export function getCurrentUser(): User {
   return users.find((user) => user.id === currentUserId) ?? users[0]
 }
 
+/**
+ * Prototype/demo shortcut: signs the browser in as `userId` without a
+ * password. The sign-in screen is the real door; this exists for the Dev tools
+ * role switcher and the demo scenario.
+ */
 export function switchUser(userId: string): void {
   setState((state) =>
-    state.users.some((user) => user.id === userId) ? { ...state, currentUserId: userId } : state,
+    state.users.some((user) => user.id === userId)
+      ? { ...state, currentUserId: userId, signedInUserId: userId }
+      : state,
   )
 }
 
