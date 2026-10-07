@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAppState, useCurrentUser, useQuests } from '../hooks/useAppState'
 import { useLocation as useLocationContext } from '../app/LocationProvider'
 import { resetAllData, setLocationDenied, setSimulatedLocation, switchUser } from '../services'
+import { signOut } from '../services/auth'
 import type { Coordinates } from '../services/types'
 import { RICHMOND_CENTER, RULES } from '../lib/constants'
 import { canReviewPlaces } from '../rules/permissions'
@@ -311,6 +312,23 @@ export function DevToolsDrawer() {
                       </span>
                     </button>
                   ))}
+                </div>
+
+                <p className="mt-2 text-[11px] text-bark-500">
+                  Switching signs the browser in as that account — the password-free shortcut the
+                  sign-in screen describes. Signed in as{' '}
+                  <span className="font-semibold text-bark-700">{user.name}</span>.
+                </p>
+
+                <div className="mt-2">
+                  <DevButton
+                    onClick={() => {
+                      setOpen(false)
+                      signOut()
+                    }}
+                  >
+                    Sign out
+                  </DevButton>
                 </div>
               </Section>
 

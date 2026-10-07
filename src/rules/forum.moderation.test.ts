@@ -115,6 +115,22 @@ describe('banned-word filter', () => {
     expect(findBannedWords('daaaamn that is steep')).toEqual(['damn'])
   })
 
+  it('sees through separators between the letters (VULN-002)', () => {
+    // A zero-width space, a dot and a hyphen are all invisible to a reader.
+    expect(findBannedWords('That da\u200bmn hill again')).toEqual(['damn'])
+    expect(findBannedWords('That d.a.m.n hill again')).toEqual(['damn'])
+    expect(findBannedWords('h\u200bell of a view')).toEqual(['hell'])
+    expect(findBannedWords('please shut-up about the parking')).toEqual(['shut up'])
+    expect(findBannedWords('nobody\u200b cares about that')).toEqual(['nobody cares'])
+  })
+
+  it('still leaves separated letters across words alone', () => {
+    // The boundaries have to survive the separator tolerance.
+    expect(findBannedWords('a new shell for the hermit crab')).toEqual([])
+    expect(findBannedWords('say hello to the ferry')).toEqual([])
+    expect(findBannedWords('the scrap paper bin')).toEqual([])
+  })
+
   it('returns every banned word it finds', () => {
     expect(findBannedWords('What a stupid damn idea')).toEqual(['damn', 'stupid'])
   })

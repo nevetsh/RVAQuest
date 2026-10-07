@@ -39,8 +39,20 @@ export function setState(updater: (previous: AppState) => AppState): void {
 
 /** Wipes the stored state and rebuilds it from the seed data. */
 export function resetAllData(): void {
+  const previous = state
   clearState()
-  state = createSeedState(STORAGE_SCHEMA_VERSION)
+  const fresh = createSeedState(STORAGE_SCHEMA_VERSION)
+
+  // A reset is itself a signed-in action (Dev tools / Admin console), so if the
+  // account still exists in the fresh seed the session survives it — only the
+  // data is wiped, not the fact that somebody is standing at the keyboard.
+  const signedInUserId = previous.signedInUserId
+  const stillSignedIn =
+    signedInUserId !== null && fresh.users.some((user) => user.id === signedInUserId)
+
+  state = stillSignedIn
+    ? { ...fresh, signedInUserId, currentUserId: signedInUserId }
+    : fresh
   saveState(state)
   emit()
 }

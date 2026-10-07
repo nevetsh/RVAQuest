@@ -6,7 +6,9 @@ import type { AppState } from './types'
  * instead of crashing the app.
  */
 
-export const STORAGE_SCHEMA_VERSION = 3
+// v5 adds the second seeded administrator account (Eilish Dangal), so an older
+// payload is rejected and re-seeded instead of hiding the new account.
+export const STORAGE_SCHEMA_VERSION = 5
 const STORAGE_KEY = 'rva-quest:state'
 
 function storageAvailable(): boolean {
@@ -34,6 +36,16 @@ export function loadState(): AppState | null {
     if (!parsed.settings || typeof parsed.settings.placeApprovalPoints !== 'number') return null
     if (!Array.isArray(parsed.auditLog)) return null
     if (!parsed.users.some((user) => user.id === parsed.currentUserId)) return null
+    if (!parsed.users.every((user) => typeof user.username === 'string')) return null
+    if (!parsed.users.every((user) => typeof user.passwordHash === 'string')) return null
+    // Signed out is a valid stored session (the sign-in gate is up).
+    if (
+      parsed.signedInUserId !== null &&
+      (!parsed.signedInUserId ||
+        !parsed.users.some((user) => user.id === parsed.signedInUserId))
+    ) {
+      return null
+    }
 
     return parsed as AppState
   } catch {

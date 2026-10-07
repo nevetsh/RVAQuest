@@ -58,6 +58,13 @@ export interface Quest {
 export interface User {
   id: string
   name: string
+  /** Sign-in name; matched case- and whitespace-insensitively (Phase 7). */
+  username: string
+  /**
+   * Prototype credential digest — see `hashPassword` in `src/rules/auth.ts`.
+   * The plain password exists only in the seed and on the sign-in screen.
+   */
+  passwordHash: string
   role: Role
   points: number
   streak: number
@@ -123,7 +130,13 @@ export interface AuditEntry {
 export interface AppState {
   schemaVersion: number
   users: User[]
+  /** Whose data the screens read. Kept in sync with the signed-in account. */
   currentUserId: string
+  /**
+   * Phase 7: the account this browser is signed in as, or `null` while the
+   * sign-in gate is up — nothing but the login screen renders in that state.
+   */
+  signedInUserId: string | null
   quests: Quest[]
   /** FR05/FR09/FR10: places suggested by users, in every review state. */
   places: Place[]

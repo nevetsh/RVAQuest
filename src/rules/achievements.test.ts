@@ -12,6 +12,8 @@ import {
 const USER: User = {
   id: 'jordan',
   name: 'Jordan Reyes',
+  username: 'jordan',
+  passwordHash: 'demo-hash',
   role: 'user',
   points: 240,
   streak: 3,

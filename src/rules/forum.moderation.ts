@@ -80,9 +80,26 @@ export function normalizeForFilter(text: string): string {
   return folded.replace(/(.)\1+/g, '$1')
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/**
+ * Separator-tolerant matcher (VULN-002 in `docs/security-review.md`).
+ *
+ * Comparing whole words missed anything a poster put *between* the letters: one
+ * zero-width space (`da` + U+200B + `mn`) or a couple of dots published a post
+ * the filter should have blocked. The letters of a banned word now have to
+ * appear in order with only non-alphanumeric characters between them — which is
+ * still how a human reads the word — while the word boundaries stay, so "hell"
+ * does not fire inside "shell" or "hello".
+ */
 function matchesWord(haystack: string, word: string): boolean {
-  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(haystack)
+  const letters = normalizeForFilter(word).replace(/[^a-z0-9]+/g, '')
+  if (!letters) return false
+
+  const pattern = letters.split('').map(escapeRegExp).join('[^a-z0-9]*')
+  return new RegExp(`(^|[^a-z0-9])${pattern}([^a-z0-9]|$)`).test(haystack)
 }
 
 /**
