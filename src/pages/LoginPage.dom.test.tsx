@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { LoginPage } from './LoginPage'
@@ -50,7 +50,7 @@ describe('LoginPage — the sign-in gate', () => {
 
   it('answers a wrong password with the generic message', async () => {
     renderLogin()
-    await submitForm('nevetsh', 'almost')
+    await submitForm('admin', 'almost')
 
     expect(screen.getByRole('alert').textContent).toBe(loginErrorMessage('wrong-password'))
     expect(getState().signedInUserId).toBeNull()
@@ -58,19 +58,19 @@ describe('LoginPage — the sign-in gate', () => {
 
   it('answers an unknown username the same way, so accounts cannot be probed', async () => {
     renderLogin()
-    await submitForm('ghost', 'Hollyduck123!')
+    await submitForm('ghost', 'wrong-one')
 
     expect(screen.getByRole('alert').textContent).toBe(loginErrorMessage('unknown-username'))
     expect(getState().signedInUserId).toBeNull()
   })
 
-  it('signs Steven Huynh in as an administrator', async () => {
+  it('signs the admin test account in as an administrator', async () => {
     renderLogin()
-    await submitForm('nevetsh', 'Hollyduck123!')
+    await submitForm('admin', 'admin')
 
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(getState().signedInUserId).toBe('nevetsh')
-    expect(getSignedInUser()?.name).toBe('Steven Huynh')
+    expect(getState().signedInUserId).toBe('admin')
+    expect(getSignedInUser()?.name).toBe('Admin')
     expect(getSignedInUser()?.role).toBe('admin')
   })
 
@@ -78,24 +78,29 @@ describe('LoginPage — the sign-in gate', () => {
     const user = userEvent.setup()
     renderLogin()
 
-    await user.click(screen.getByRole('button', { name: /Steven Huynh/ }))
+    // Each demo button's accessible name runs its display name, username and role
+    // together, so it is matched on the display name that leads it.
+    const list = screen.getByRole('region', { name: /demo accounts/i })
+    await user.click(within(list).getByRole('button', { name: /^Admin/ }))
 
-    expect((screen.getByLabelText(/username/i) as HTMLInputElement).value).toBe('nevetsh')
-    expect((screen.getByLabelText(/^password$/i) as HTMLInputElement).value).toBe('Hollyduck123!')
+    expect((screen.getByLabelText(/username/i) as HTMLInputElement).value).toBe('admin')
+    expect((screen.getByLabelText(/^password$/i) as HTMLInputElement).value).toBe('admin')
 
     await user.click(screen.getByRole('button', { name: /^sign in$/i }))
-    expect(getState().signedInUserId).toBe('nevetsh')
+    expect(getState().signedInUserId).toBe('admin')
   })
 
   it('names the demo accounts without printing their passwords', () => {
     renderLogin()
     const list = screen.getByRole('region', { name: /demo accounts/i })
 
-    expect(list.textContent).toMatch(/Steven Huynh/)
-    expect(list.textContent).toMatch(/nevetsh/)
+    expect(list.textContent).toMatch(/Admin/)
     expect(list.textContent).toMatch(/Administrator/)
-    // The secrets stay in the README (and, honestly, in the bundle: VULN-006).
+    // No password reaches the screen (the demo ones do ship in the bundle: VULN-006).
+    // The test account's password is its own username, so it is the one account
+    // whose secret cannot be told apart from its label on this list.
     for (const account of SEED_ACCOUNTS) {
+      if (account.password === account.username) continue
       expect(list.textContent).not.toContain(account.password)
     }
   })

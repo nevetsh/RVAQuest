@@ -150,7 +150,7 @@ counting as a further submission:
 | | |
 | --- | --- |
 | **How** | This is a process requirement, not code. The prototype supports it with a **versioned storage schema** (`STORAGE_SCHEMA_VERSION` + load-time validation in `src/services/storage.ts`) and an upgrade path that re-seeds on schema mismatch, so content can be refreshed without stale local data breaking the app. |
-| **Code** | `src/services/storage.ts` — `STORAGE_SCHEMA_VERSION` (currently 5); `src/services/seed*.ts` |
+| **Code** | `src/services/storage.ts` — `STORAGE_SCHEMA_VERSION` (currently 6); `src/services/seed*.ts` |
 | **Evidence** | Schema version shown in Dev tools › Data ("schema v*n*"); old payloads are validated and re-seeded |
 
 ### NFR04 — Maximum 12 place submissions per user per day
@@ -221,7 +221,7 @@ behaviour asserted in `src/services/places.service.test.ts`:
 | **Daily limit** (BR02 / NFR04 — 12 per day) | 12 accepted, 13th refused; counter and "remaining" maths; resets when the day key changes; per-user isolation; an edit or a withdrawal neither spends nor refunds an allowance |
 | **Points-once** (BR05) | first approval awards, second approval does not; rejection awards none; withdrawal awards none and blocks a later approval; submitter points change by exactly the place's points |
 
-Full suite: **235 tests / 14 files, all passing** (`npm test`). The four jsdom
+Full suite: **236 tests / 14 files, all passing** (`npm test`). The four jsdom
 component suites (`AddPlacePage.dom.test.tsx`, `ModeratorQueuePage.dom.test.tsx`,
 `LoginPage.dom.test.tsx`, `ProfilePage.dom.test.tsx`) drive the submission form, the
 moderator queue, the sign-in screen and the password form through real user events —
@@ -290,7 +290,7 @@ is reversible and isolated to the file named.
     parallel with the place pipeline; shared files (`types.ts`, `storage.ts`,
     `seed.ts`, `constants.ts`, `App.tsx`, `ProfilePage.tsx`, `SuggestionBox.tsx`)
     were extended additively so both feature lines keep working. The full suite
-    (235 tests) passes after the merge.
+    (236 tests) passes after the merge.
 14. **Sign-in is a gate, not a security boundary.** The app is client-only, so there
     is no server to authenticate against: `hashPassword` is FNV-1a obfuscation that
     keeps plain passwords out of the stored state (and out of an exported JSON), not
@@ -299,16 +299,24 @@ is reversible and isolated to the file named.
     passwords return the *same* message so the screen cannot be used to enumerate
     accounts; suspension is checked only after the password matches, for the same
     reason; the gate names the demo accounts and fills the form when one is picked, but
-    does not print their passwords — those live in `README.md`, because there is no
-    registration or reset flow and the one-click demo has to keep working; a data reset
+    does not print their passwords, and the only credential written down in `README.md` is
+    the throwaway `admin` test account, because there is no registration or reset flow and
+    the one-click demo has to keep working; a data reset
     keeps the session if the account still
     exists (a reset is a signed-in action, not a sign-out); and `switchUser` in the Dev
     tools and the demo scenario is a deliberate password-free shortcut that can sign in
     as *any* seed account, suspension included. A deployed build would POST the
     password over TLS and let the server run bcrypt/argon2 (see `src/rules/auth.ts`).
-    Two seeded administrators carry stakeholder accounts: `nevetsh`
-    (Steven Huynh, `Hollyduck123!`) and `dangle` (Eilish Dangal, the deliberately
-    weak default `123` the stakeholder asked for).
+    Two stakeholder accounts were seeded here for the walkthrough and have since been
+    **deleted**, passwords included: their plaintext was exposed in this repository's
+    history (VULN-001 and VULN-007 in `docs/security-review.md`), so the prototype now
+    ships no real person's account. `STORAGE_SCHEMA_VERSION` was bumped to 6 for the
+    removal, which is not just tidiness — without it a browser still holding a v5 payload
+    would keep the deleted accounts as working sign-ins. One account remains for testing:
+    `admin`, whose password is its own username, and that is the only credential written
+    down anywhere (`README.md`). The other five (`jordan`, `casey`, `dana`, `morgan`,
+    `alex`) share a single demo password, which is therefore in `SEED_ACCOUNTS` and in the
+    bundle, but is deliberately not repeated here or in `README.md`.
 15. **Changing your own password has no length or complexity policy.** Profile →
     Password reuses the gate's credential check and its wording for a wrong current
     password; the only rules are that both new fields are filled, that they match, and

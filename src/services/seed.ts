@@ -280,24 +280,15 @@ export interface SeedAccount {
 
 export const SEED_ACCOUNTS: SeedAccount[] = [
   {
-    // Phase 7: the administrator account the walkthrough signs in with.
-    id: 'nevetsh',
-    username: 'nevetsh',
-    password: 'Hollyduck123!',
-    name: 'Steven Huynh',
-    role: 'admin',
-    points: 0,
-    streak: 0,
-    favoriteQuestIds: [],
-  },
-  {
-    // Phase 7: a second administrator, seeded with a deliberately weak default
-    // password (`123`) so the walkthrough can show a credential that is not a
-    // demo secret. See docs/traceability.md, interpretation #14.
-    id: 'dangle',
-    username: 'dangle',
-    password: '123',
-    name: 'Eilish Dangal',
+    // Phase 8: the one test account. The two stakeholder accounts seeded here
+    // before were deleted after their passwords were exposed in this
+    // repository's history, and replaced by this deliberately plain
+    // test credential so the prototype can still be driven end to end.
+    // See docs/traceability.md, interpretation #14.
+    id: 'admin',
+    username: 'admin',
+    password: 'admin',
+    name: 'Admin',
     role: 'admin',
     points: 0,
     streak: 0,

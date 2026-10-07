@@ -20,32 +20,32 @@ describe('signing in', () => {
   })
 
   it('opens the session and points the screens at the same account', () => {
-    const result = signIn('nevetsh', 'Hollyduck123!')
+    const result = signIn('admin', 'admin')
 
     expect(result.ok).toBe(true)
-    expect(getState().signedInUserId).toBe('nevetsh')
-    expect(getState().currentUserId).toBe('nevetsh')
-    expect(getSignedInUser()?.name).toBe('Steven Huynh')
+    expect(getState().signedInUserId).toBe('admin')
+    expect(getState().currentUserId).toBe('admin')
+    expect(getSignedInUser()?.name).toBe('Admin')
     expect(getSignedInUser()?.role).toBe('admin')
   })
 
   it('leaves the session closed on a wrong password', () => {
-    const result = signIn('nevetsh', 'almost')
+    const result = signIn('admin', 'almost')
 
     expect(result).toEqual({ ok: false, error: 'wrong-password' })
     expect(getState().signedInUserId).toBeNull()
   })
 
   it('leaves the session closed for an unknown username', () => {
-    expect(signIn('ghost', 'Hollyduck123!')).toEqual({ ok: false, error: 'unknown-username' })
+    expect(signIn('ghost', 'admin')).toEqual({ ok: false, error: 'unknown-username' })
     expect(getSignedInUser()).toBeNull()
   })
 
   it('keeps the current session when a later sign-in fails', () => {
-    signIn('nevetsh', 'Hollyduck123!')
+    signIn('admin', 'admin')
     signIn('casey', 'wrong')
 
-    expect(getSignedInUser()?.id).toBe('nevetsh')
+    expect(getSignedInUser()?.id).toBe('admin')
   })
 
   it('upgrades a legacy digest the moment the account signs in (VULN-001)', () => {
@@ -68,7 +68,7 @@ describe('signing in', () => {
   })
 
   it('refuses a suspended account', () => {
-    const suspended = setUserSuspended('nevetsh', 'casey', true)
+    const suspended = setUserSuspended('admin', 'casey', true)
     expect(suspended.ok).toBe(true)
 
     expect(signIn('casey', 'rvaquest')).toEqual({ ok: false, error: 'suspended' })
@@ -178,20 +178,20 @@ describe('the prototype switchUser shortcut', () => {
   })
 
   it('ignores an unknown user id', () => {
-    signIn('nevetsh', 'Hollyduck123!')
+    signIn('admin', 'admin')
     switchUser('nobody')
 
-    expect(getSignedInUser()?.id).toBe('nevetsh')
+    expect(getSignedInUser()?.id).toBe('admin')
   })
 })
 
 describe('resetting the demo data', () => {
   it('keeps a session whose account still exists in the seed', () => {
-    signIn('nevetsh', 'Hollyduck123!')
+    signIn('admin', 'admin')
     resetAllData()
 
-    expect(getState().signedInUserId).toBe('nevetsh')
-    expect(getSignedInUser()?.name).toBe('Steven Huynh')
+    expect(getState().signedInUserId).toBe('admin')
+    expect(getSignedInUser()?.name).toBe('Admin')
     expect(getState().auditLog).toHaveLength(2)
   })
 })

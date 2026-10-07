@@ -13,8 +13,10 @@ import { cn } from '../lib/cn'
  *
  * The demo list names the seed accounts and fills the form when one is chosen,
  * but it does not print their passwords: those are demo data for whoever is
- * running the prototype (README), not something to hand to every visitor. The
- * values still ship inside the bundle — see VULN-006 in docs/security-review.md.
+ * running the prototype, not something to hand to every visitor. The one
+ * credential written down anywhere is the `admin` test account, and that is in
+ * the README because it is deliberately worthless. The demo passwords still ship
+ * inside the bundle — see VULN-006 and VULN-007 in docs/security-review.md.
  */
 
 const FIELD_CLASSES =
@@ -137,8 +139,7 @@ export function LoginPage() {
           </h2>
           <p className="mt-1 text-[11px] text-bark-500">
             A deployed build would check credentials on a server; here they are demo data. Pick an
-            account and the form is filled in for you — the passwords themselves are in the
-            project README, not on this screen.
+            account and the form is filled in for you — no password is shown on this screen.
           </p>
 
           <ul className="mt-3 grid gap-1.5">
