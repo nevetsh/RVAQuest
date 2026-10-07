@@ -50,8 +50,8 @@ passwords themselves are only here in the README, never on the sign-in screen.
 
 | Who | Username | Password | They can |
 | --- | --- | --- | --- |
-| Steven Huynh | `nevetsh` | `Hollyduck123!` | everything — admin console included |
-| Eilish Dangal | `dangle` | `123` | everything — admin console included |
+| Steven Huynh | `nevetsh` | everything — admin console included |
+| Eilish Dangal | `dangle` | everything — admin console included |
 | Alex Chen | `alex` | `rvaquest` | everything — admin console included |
 | Dana Whitfield | `dana` | `rvaquest` | review suggested places and moderate the forum |
 | Morgan Ellis | `morgan` | `rvaquest` | review places, quests and content |
